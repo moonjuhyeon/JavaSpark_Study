@@ -4,7 +4,6 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.sources.In;
 import scala.Tuple2;
 
 import java.util.Arrays;
@@ -12,18 +11,17 @@ import java.util.List;
 
 public class WordCount {
     public static void main(String[] args) {
-
         SparkConf conf = new SparkConf().setAppName("wordCount").setMaster("local");
         JavaSparkContext sc = new JavaSparkContext(conf);
-        JavaRDD<String> textFile = sc.textFile("./big.txt");
+        JavaRDD<String> textFile = sc.textFile("./korean.txt");
         JavaPairRDD<String, Integer> counts = textFile
                 .flatMap(line -> Arrays.asList(line.split(" ")).iterator())
                 .mapToPair(word -> "".equals(word) ? new Tuple2<>(StringReplace(word),0) : new Tuple2<>(StringReplace(word), 1))
-                .reduceByKey((a, b) -> a + b)
-                .filter(key -> key._2>0)
-                .mapToPair(item -> item.swap())
+                .reduceByKey(Integer::sum)
+                .filter(key -> key._2>30)
+                .mapToPair(Tuple2::swap)
                 .sortByKey(false)
-                .mapToPair(item -> item.swap());
+                .mapToPair(Tuple2::swap);
 
         List output = counts.collect();
 
